@@ -1,14 +1,54 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+	"time"
+)
 
 func main() {
-	list := []int{3, 2, 4}
-	var target int
 
-	fmt.Print("Gimme a target number: ")
-	fmt.Scanf("%v", &target)
+	inputs := []struct {
+		nameofbenchmark string
+		nums            []int
+		target          int
+	}{
+		{
+			"[Small Input Test]",
+			[]int{2, 7, 11, 15},
+			9,
+		},
+		{
+			"[Stress Test - 10 000]",
+			func() []int {
+				res := make([]int, 0, 10_000)
+				for i := 1; i <= 9_999; i++ {
+					res = append(res, i)
+				}
+				res = append(res, 1)
+				return res
+			}(),
+			2,
+		},
+	}
 
-	res := twoSum(list, target)
-	fmt.Println(res)
+	fmt.Println("=== Benchmarking ===")
+
+	for _, test := range inputs {
+		var m1, m2 runtime.MemStats
+		runtime.GC()
+		runtime.ReadMemStats(&m1)
+		start := time.Now()
+
+		_ = twoSum(test.nums, test.target)
+
+		elapsed := time.Since(start)
+		runtime.ReadMemStats(&m2)
+
+		fmt.Printf("\n%s\n", test.nameofbenchmark)
+
+		fmt.Printf("Execution Time: %v\n", elapsed)
+		fmt.Printf("Memory Delta: %v bytes\n", m2.Alloc-m1.Alloc)
+		fmt.Printf("Current Memory: %v bytes\n", m2.Sys)
+	}
 }
